@@ -1,0 +1,9 @@
+[package]
+name = "msi-tui"
+version = "0.1.0"
+edition = "2021"
+description = "Keyboard TUI for MSI GF63 msi-ec fan, shift and cooler boost control"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
