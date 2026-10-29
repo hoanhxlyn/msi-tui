@@ -65,7 +65,6 @@ impl SysState {
 enum Screen {
     Main,
     Shift,
-    Fan,
     Boost,
     Status,
 }
@@ -81,7 +80,6 @@ struct App {
 
 fn sub_items(sys: &SysState, screen: Screen) -> Vec<String> {
     match screen {
-        Screen::Fan => sys.fan_modes.clone(),
         Screen::Boost => vec!["on".into(), "off".into()],
         Screen::Shift => {
             let mut v = sys.shift_modes.clone();
@@ -96,7 +94,6 @@ fn sub_items(sys: &SysState, screen: Screen) -> Vec<String> {
 
 fn active(sys: &SysState, screen: Screen) -> Option<String> {
     match screen {
-        Screen::Fan => sys.fan_mode.clone(),
         Screen::Shift => sys.shift_mode.clone(),
         Screen::Boost => sys.cooler.clone(),
         _ => None,
@@ -105,7 +102,6 @@ fn active(sys: &SysState, screen: Screen) -> Option<String> {
 
 fn ctl_args(screen: Screen, value: &str) -> Option<(&'static str, String)> {
     let cmd = match screen {
-        Screen::Fan => "fan-mode",
         Screen::Shift => "shift-mode",
         Screen::Boost => "cooler-boost",
         _ => return None,
@@ -148,8 +144,8 @@ impl App {
         }
     }
 
-    fn main_items() -> [&'static str; 5] {
-        ["Performance (shift mode)", "Fan mode", "Cooler Boost", "Full status (read-only)", "Quit"]
+    fn main_items() -> [&'static str; 4] {
+        ["Performance (shift mode)", "Cooler Boost", "Full status (read-only)", "Quit"]
     }
 
     fn items(&self) -> Vec<String> {
@@ -177,9 +173,8 @@ impl App {
         match self.screen {
             Screen::Main => match self.sel {
                 0 => self.open(Screen::Shift),
-                1 => self.open(Screen::Fan),
-                2 => self.open(Screen::Boost),
-                3 => self.open(Screen::Status),
+                1 => self.open(Screen::Boost),
+                2 => self.open(Screen::Status),
                 _ => self.quit = true,
             },
             screen => {
@@ -239,13 +234,10 @@ const ICON_QUIT: &str = "\u{f0425}"; // U+F0425
 
 fn option_color(screen: Screen, value: &str) -> Color {
     match (screen, value) {
-        (Screen::Shift, "turbo") | (Screen::Fan, "advanced") | (Screen::Boost, "on") => {
-            Color::Red
-        }
-        (Screen::Shift, "sport") | (Screen::Fan, "basic") => Color::Yellow,
-        (Screen::Shift, "comfort") | (Screen::Fan, "auto") => Color::Cyan,
+        (Screen::Shift, "turbo") | (Screen::Boost, "on") => Color::Red,
+        (Screen::Shift, "sport") => Color::Yellow,
+        (Screen::Shift, "comfort") => Color::Cyan,
         (Screen::Shift, "eco") | (Screen::Boost, "off") => Color::Green,
-        (Screen::Fan, "silent") => Color::DarkGray,
         _ => Color::Reset,
     }
 }
@@ -253,9 +245,8 @@ fn option_color(screen: Screen, value: &str) -> Color {
 fn main_icon(index: usize) -> &'static str {
     match index {
         0 => ICON_SHIFT,
-        1 => ICON_FAN,
-        2 => ICON_BOOST,
-        3 => ICON_STATUS,
+        1 => ICON_BOOST,
+        2 => ICON_STATUS,
         _ => ICON_QUIT,
     }
 }
@@ -491,7 +482,6 @@ mod tests {
 
     #[test]
     fn ctl_commands_match_wrapper_contract() {
-        assert_eq!(ctl_args(Screen::Fan, "auto").unwrap().0, "fan-mode");
         assert_eq!(ctl_args(Screen::Shift, "eco").unwrap().0, "shift-mode");
         assert_eq!(ctl_args(Screen::Boost, "on").unwrap().0, "cooler-boost");
         assert!(ctl_args(Screen::Status, "x").is_none());

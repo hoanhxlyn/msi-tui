@@ -1,8 +1,8 @@
 # msi-tui
 
-Keyboard-only terminal UI for the MSI GF63's `msi-ec` fan / shift / cooler boost
-controls. Reads sysfs directly, writes only through the passwordless
-`msi-ec-ctl` wrapper, refreshes every 2 seconds.
+Keyboard-only terminal UI for the MSI GF63's `msi-ec` shift / cooler boost
+controls, with fan mode and sensor readouts. Reads sysfs directly, writes only
+through the passwordless `msi-ec-ctl` wrapper, refreshes every 2 seconds.
 
 Renders inline (no alternate screen): it takes the rows it needs at the bottom
 of the terminal and leaves your scrollback intact.
@@ -40,7 +40,8 @@ Requires a Nerd Font in the terminal for the icons
 
 Everything under `/sys/devices/platform/msi-ec`:
 
-- `fan_mode`, `available_fan_modes`
+- `fan_mode`, `available_fan_modes` (displayed in the header and status page;
+  not writable, see [Writes](#writes))
 - `shift_mode`, `available_shift_modes` (`unspecified` shows as `-` in the
   header and as an informational, non-applicable row in the menu)
 - `cooler_boost`
@@ -60,7 +61,6 @@ If the `msi-ec` driver or sysfs path is missing, fields render as `-`.
 Applied only via:
 
 ```sh
-sudo -n /run/current-system/sw/bin/msi-ec-ctl fan-mode <value>
 sudo -n /run/current-system/sw/bin/msi-ec-ctl shift-mode <value>
 sudo -n /run/current-system/sw/bin/msi-ec-ctl cooler-boost <on|off>
 ```
@@ -68,6 +68,12 @@ sudo -n /run/current-system/sw/bin/msi-ec-ctl cooler-boost <on|off>
 One attempt per keypress, no retries. Failures show in the footer; a missing
 writer (e.g. before the host rebuild that installs `msi-ec-ctl`) leaves the UI
 read-only with a "writer not installed" message.
+
+Fan mode is deliberately not written. The driver only flips the mode byte at
+`0xF4`; the EC's fan speed actually comes from the curve tables at
+`0x6A-0x78` (CPU) and `0x82-0x90` (GPU), which msi-ec never writes. On this
+firmware (`16R5EMS1.102`) the write succeeds and reads back, but fan speed
+never changes. See issue #1.
 
 ## Nix package
 
